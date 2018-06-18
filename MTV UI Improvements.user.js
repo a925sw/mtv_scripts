@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV UI Improvements
 // @namespace    http://tampermonkey.net/
-// @version      0.40
+// @version      0.41
 // @description  Various UI modifications to improve organization.
 // @author       Narkyy
 // @match        https://www.morethan.tv/*
@@ -798,7 +798,7 @@ function getCachedLists(){
         init_count = GM_getValue("last_id");
     }
     else{
-        init_count = 10112;
+        init_count = 10106;
         GM_setValue("last_id", init_count);
     }
     //Set current to last ID
@@ -865,7 +865,7 @@ function getSeries(i){
         }
 
         current_count++;
-        if(current_count < init_count+5){
+        if(current_count < init_count+10){
             setTimeout(function(){ getSeries(current_count); }, 500);
         }
         else{
