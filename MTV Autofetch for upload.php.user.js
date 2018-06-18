@@ -8,11 +8,12 @@
 // @match        https://www.morethan.tv/upload.php?requestid=*
 // @match        https://morethan.tv/upload.php
 // @match        https://morethan.tv/upload.php?requestid=*
-// @grant GM_setValue
-// @grant GM_listValues
-// @grant GM_deleteValue
-// @grant GM_getValue
-// @grant GM.xmlHttpRequest
+// @grant        GM_setValue
+// @grant        GM_listValues
+// @grant        GM_deleteValue
+// @grant        GM_getValue
+// @grant        GM.xmlHttpRequest
+// @downloadURL  https://rawgit.com/quietvoid/mtv_scripts/master/MTV%20Autofetch%20for%20upload.php.user.js
 // ==/UserScript==
 
 /* Initialize source arrays */
