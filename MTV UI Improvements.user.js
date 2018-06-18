@@ -12,7 +12,7 @@
 // @grant        GM_deleteValue
 // @grant        GM_getValue
 // @grant        GM.xmlHttpRequest
-// @downloadURL  https://greasyfork.org/scripts/369325-mtv-ui-improvements/code/MTV%20UI%20Improvements.user.js
+// @downloadURL  https://rawgit.com/quietvoid/mtv_scripts/master/MTV%20UI%20Improvements.user.js
 // ==/UserScript==
 
 //Definition of global variables
