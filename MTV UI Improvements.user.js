@@ -137,7 +137,6 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                 //If the group name isn't Season XX, we rename to what it is.
                 if(/S[0-9]+(\.|\s)/.test($(this).text()) || !/^Season.[0-9]+($|\sPart|\.\d)/i.test($(this).text())){
 
-                    console.log($(this).text());
                     season_group = $("tr[class*='groupid_"+artist_groupid+"']");
 
                     //Add header for rest of seasons
