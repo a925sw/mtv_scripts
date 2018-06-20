@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV UI Improvements
 // @namespace    http://tampermonkey.net/
-// @version      0.41
+// @version      0.42
 // @description  Various UI modifications to improve organization.
 // @author       Narkyy
 // @match        https://www.morethan.tv/*
@@ -135,8 +135,9 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                 var final_season;
 
                 //If the group name isn't Season XX, we rename to what it is.
-                if(/S[0-9]+(\.|\s)/.test($(this).text()) || !/^Season.[0-9]+($|\sPart)/i.test($(this).text())){
+                if(/S[0-9]+(\.|\s)/.test($(this).text()) || !/^Season.[0-9]+($|\sPart|\.\d)/i.test($(this).text())){
 
+                    console.log($(this).text());
                     season_group = $("tr[class*='groupid_"+artist_groupid+"']");
 
                     //Add header for rest of seasons
