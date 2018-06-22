@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV UI Improvements
 // @namespace    http://tampermonkey.net/
-// @version      0.42
+// @version      0.43
 // @description  Various UI modifications to improve organization.
 // @author       Narkyy
 // @match        https://www.morethan.tv/*
@@ -174,7 +174,7 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                 //If the group is named Season XX only
                 else{
 
-                     season_group = $("tr[class*='groupid_"+artist_groupid+"']");
+                    season_group = $("tr[class*='groupid_"+artist_groupid+"']");
 
                     //Push the url to the groups array for requests
                     groups.push($(this).attr('href'));
@@ -218,6 +218,9 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                 var ep_season_grp = $.merge(ep_head, ep_group);
 
                 artistEpisodes.push(ep_season_grp);
+            }
+            else{
+                contains_episodes = true;
             }
             group_count++;
         });
@@ -494,6 +497,20 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                 $(remaining_tables[1]).insertBefore($(remaining_tables[0]));
             }
             //$(second_colhead).insertAfter($(first_colhead));
+        }
+        else if (page_url == '/torrents.php'){
+            var pad_rls;
+            var pad_edition;
+
+            pad_rls = (contains_episodes ? "35%" : "38%");
+            pad_edition = (contains_episodes ? "24%" : "27%");
+
+            //Move the releases to center of group on torrents.php browse/search
+            $(artistSeasons).each(function(){
+                $(this).find("td[colspan^='3']").contents().filter(function(){return this.nodeType !== 1;}).remove();
+                $(this).find("td[colspan^='3'] > a").wrap('<span style="float:left;padding-left:'+pad_rls+';"></span>').before(document.createTextNode(' » '));
+                $(this).find("td[colspan^='9'] strong").css('padding-left',pad_edition);
+            });
         }
 
         //Start getting release names
