@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV Autofetch for upload.php
 // @namespace    http://tampermonkey.net/
-// @version      0.61
+// @version      0.62
 // @description  Autofill the upload form using TVDB/TVmaze API
 // @author       Narkyy
 // @match        https://www.morethan.tv/upload.php
@@ -40,6 +40,7 @@ var year_regex = /(\d.+?)\-/i;
 var alt_year_regex = /^(.+?).(20\d\d).\d\d.\d\d/i;
 var movie_year_regex = /(19\d\d|20\d\d)(\.|\s)/i;
 var tvmaze_nameyear_regex = /^.+?(20\d\d).S[0-9].+?/i;
+var tvmaze_url_to_seriesname_regex = /.+\/(.+)/;
 
 var input_text;
 
@@ -89,6 +90,9 @@ var mazeManualSearch = "https://api.tvmaze.com/shows/";
 var ext_tvdb;
 var tvdb_url;
 var tvdb_title
+
+var tvmaze_url;
+var alt_tvdbname;
 
 if(GM_getValue("selectedapi")){
     selectedAPI = GM_getValue("selectedapi");
@@ -278,6 +282,7 @@ function refreshInfo() {
         }
 
         if(selectedAPI == "tvdb"){
+            console.log("Getting main info from TVDB");
             //Get TVDB ID
             GM.xmlHttpRequest({
                 method: "GET",
@@ -306,6 +311,7 @@ function refreshInfo() {
         }
         else if (selectedAPI == "tvmaze"){
 
+            console.log("Getting main info from TVmaze");
             //Get show from release name
             GM.xmlHttpRequest({
                 method: "GET",
@@ -538,16 +544,25 @@ function getSeriesInfoMaze(){
                 imdbid = parser.externals.imdb;
                 imdblink = "https://www.imdb.com/title/" + imdbid;
                 ext_tvdb = parser.externals.thetvdb;
-                tvdb_url = "https://www.thetvdb.com?id="+ext_tvdb+"&tab=series";
+                tvmaze_url = parser.url.replace("http://", "https://");
 
                 poster = parser.image.original.replace("http://", "https://");
-
                 genres = genres.toString().replace(/,/g, ', ').toLowerCase();
 
                 if(!imdbid){
                     imdblink = null;
                 }
-                //console.log(seriesname +"\n"+genres +"\n"+synopsis+"\n"+imdblink+"\n"+poster);
+
+                //If TVmaze has no record of a TVDB ID
+                if(ext_tvdb){
+                    tvdb_url = "https://www.thetvdb.com?id="+ext_tvdb+"&tab=series";
+                }
+                else if (tvmaze_url_to_seriesname_regex.test(tvmaze_url)){
+                    alt_tvdbname = tvmaze_url_to_seriesname_regex.exec(tvmaze_url)[1];
+                    tvdb_url = "https://www.thetvdb.com/series/"+alt_tvdbname;
+                }
+
+                //console.log(seriesname +"\n"+genres +"\n"+synopsis+"\n"+imdblink+"\n"+poster+"\n"+ext_tvdb);
             }
             else{
                 console.log("Error parsing response: TVmaze ID Lookup");
@@ -759,13 +774,21 @@ function populateFields(){
     $("#title").val (rls_name);
 
     if (tvdb_title){
-        console.log("Got some info from TVDB");
+        console.log("Got extra info from TVDB");
         seriesname = tvdb_title;
     }
 
-    $("#matched_ui a span").text(seriesname).css("color", "#009b24");
-    $("#matched_url").attr("href", tvdb_url);
-    $("#matched_ui").show();
+    if((selectedAPI == "tvmaze" && (ext_tvdb || alt_tvdbname)) || selectedAPI == "tvdb"){
+        $("#matched_ui a span").text(seriesname).css("color", "#009b24");
+        $("#matched_url").attr("href", tvdb_url);
+        $("#matched_ui").show();
+    }
+    else{
+        $("#matched_label b").text("TVmaze Link: ");
+        $("#matched_ui a span").text(seriesname).css("color", "#31e08b");
+        $("#matched_url").attr("href", tvmaze_url);
+        $("#matched_ui").show();
+    }
 
     //Series
     $("#artist").val (seriesname);
@@ -862,29 +885,43 @@ function populateFields(){
     //console.log(rls_name+"\n"+seriesname+"\n"+genres+"\n"+ep_name+"\n"+ep_overview+"\n"+year+"\n"+poster+"\n"+actors+"\n"+synopsis);
 }
 
+//Requests the TVDB page to get:
+//Series name, genres, IMDB ID
 function getTVDBTitle(){
-    GM.xmlHttpRequest({
-        method: "GET",
-        url: tvdb_url,
-        onload: function(response) {
-            var tvdbtitleregex = /<h1.+>(.+)<\/h1>/i;
-            var series_info = $($.parseHTML(response.responseText)).find('#series_basic_info li');
+    if(alt_tvdbname || ext_tvdb){
+        GM.xmlHttpRequest({
+            method: "GET",
+            url: tvdb_url,
+            onload: function(response) {
+                var tvdbtitleregex = /<h1.+>(.+)<\/h1>/i;
+                var series_info = $($.parseHTML(response.responseText)).find('#series_basic_info li');
 
-            tvdb_title = tvdbtitleregex.exec(response.responseText)[1];
-            var tvdb_genres = $($(series_info)[5]).find("span").text().toLowerCase();
-            var tvdb_imdb = $($(series_info)[8]).find("span").text();
+                if(tvdbtitleregex.test(response.responseText)){
+                    tvdb_title = tvdbtitleregex.exec(response.responseText)[1];
+                    var tvdb_genres = $($(series_info)[5]).find("span").text().toLowerCase();
+                    var tvdb_imdb = $($(series_info)[8]).find("span").text();
 
-            if(!imdbid && tvdb_imdb){
-                imdblink = "https://www.imdb.com/title/" + tvdb_imdb;
+                    if(!imdbid && tvdb_imdb){
+                        imdblink = "https://www.imdb.com/title/" + tvdb_imdb;
+                    }
+                    if(tvdb_genres){
+                        genres = tvdb_genres;
+                    }
+                }
+                else{
+                    console.log("Couldn't get extra TVDB info");
+                    alt_tvdbname = null;
+                }
+
+                //console.log(tvdb_title+"\n"+genres + "\n"+imdblink);
+                setTimeout(populateFields, 500);
             }
-            if(tvdb_genres){
-                genres = tvdb_genres;
-            }
-
-            //console.log(tvdb_title+"\n"+genres + "\n"+imdblink);
-            setTimeout(populateFields, 500);
-        }
-    });
+        });
+    }
+    else{
+        console.log("Couldn't get extra TVDB info: No TVDB ID on TVmaze");
+        setTimeout(populateFields, 500);
+    }
 }
 
 function checkTVDBConfig(){
