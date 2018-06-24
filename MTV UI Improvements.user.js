@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV UI Improvements
 // @namespace    http://tampermonkey.net/
-// @version      0.43
+// @version      0.44
 // @description  Various UI modifications to improve organization.
 // @author       Narkyy
 // @match        https://www.morethan.tv/*
@@ -58,6 +58,7 @@ var new_season_childs = [];
 
 var artistSeasons = [];
 var artistEpisodes = [];
+var artistExtras = [];
 var ep_array = [];
 var ep_rows = [];
 var ep_edition_rows = [];
@@ -76,7 +77,9 @@ var allbanners;
 var series_info;
 var tvmaze_box = $();
 
-var contains_seasons = false, contains_episodes = false;
+var contains_seasons = false, contains_episodes = false, contains_extras = false;
+var extras_table;
+
 //Series search bar
 var searchbar_series = $("li#searchbar_torrents").clone(true);
 
@@ -87,7 +90,6 @@ var stylesheet_user = $($.grep($("link[rel^=stylesheet]"), function(obj){return 
 getCachedLists();
 //Initialize series search bar
 initSeriesSearchBar();
-
 
 //If page is /torrents.php
 if (page_url == '/torrents.php' || page_url == '/artist.php'){
@@ -111,10 +113,8 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
 
                 contains_seasons = true;
 
-                var groupid_regex = /id=(.+)/;
-
                 //Get the torrents id for request
-                var artist_groupid = groupid_regex.exec($(this).attr('href'))[1];
+                var artist_groupid = art_id_regex.exec($(this).attr('href'))[1];
 
                 //Get all rows under the torrent id
                 var alt_rows = $("tr[class^='releases_23 torrent_row groupid_"+ artist_groupid+"'] td[colspan=2] > a, tr[class^='releases_24 torrent_row groupid_"+ artist_groupid+"'] td[colspan=2] > a,"+
@@ -195,6 +195,21 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                     //Push the season rows to array
                     artistSeasons.push(final_season);
                 }
+                //Rename head to Showname - Season XX [Year]
+                if(page_url == '/torrents.php'){
+                    var seasonno = $(this).text();
+                    var showname = $(this).closest("td").prev().find("div[class^='tp-showname']").text();
+                    $(this).text(showname+" - "+seasonno);
+
+                    //Remove category, keep only year.
+                    var yeartext = $($(this).parent().contents()[2]).text();
+                    if(/(.*)(?=\[[a-zA-Z])/i.test(yeartext)){
+                        yeartext = /(.*)(?=\[[a-zA-Z])/i.exec(yeartext)[1];
+                    }
+
+                    $(this).parent().contents()[2].remove();
+                    $(this).after("<span>"+yeartext+"</span>");
+                }
             }
             //If there's EXX in the name, enter this
             else if(ep_grp_regex.test($(this).text()) && page_url == '/artist.php'){
@@ -202,8 +217,7 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                 contains_episodes = true;
 
                 var ep_name = $(this).text();
-                var groupid_regex_ep = /id=(.+)/;
-                var artist_groupid_ep = groupid_regex_ep.exec($(this).attr('href'))[1];
+                var artist_groupid_ep = art_id_regex.exec($(this).attr('href'))[1];
 
                 var ep_head = $($("tr[class^='releases_23 groupid_"+artist_groupid_ep+" edition group_torrent discog'], tr[class^='releases_24 groupid_"+artist_groupid_ep+" edition group_torrent discog'],"+
                                   "tr[class^='releases_25 groupid_"+artist_groupid_ep+" edition group_torrent discog'], tr[class^='releases_99 groupid_"+artist_groupid_ep+" edition group_torrent discog'],"+
@@ -220,7 +234,32 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                 artistEpisodes.push(ep_season_grp);
             }
             else{
-                contains_episodes = true;
+                if(page_url != '/artist.php'){
+                    contains_episodes = true;
+                }
+                else{  //There's extras on artist.php
+                    contains_extras = true;
+
+                    //Get extras release name
+                    groups.push($(this).attr('href'));
+
+                    var extras_groupid = art_id_regex.exec($(this).attr('href'))[1];
+
+                    //Remove head
+                    $(this).closest("tr").remove();
+                    //Remove edition rows
+                    $("tr[class*='groupid_"+extras_groupid+" edition group_torrent']").remove();
+
+                    //Get release <a> for name requests
+                    var extras_a = $("tr[class*='torrent_row groupid_"+extras_groupid+"'] td[colspan=2] > a");
+                    $.merge(final_rows, extras_a);
+
+                    //Get final rows to move
+                    var extras_tr = $("tr[class*='torrent_row groupid_"+extras_groupid+"']");
+
+                    artistExtras.push(extras_tr);
+
+                }
             }
             group_count++;
         });
@@ -293,6 +332,9 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
             $(info_box).find("div strong").text('Series Info');
             $(info_box).find("ul li").remove()
 
+            //Remove empty objects breaking the sorting of episode groups
+            artistEpisodes = $.grep(artistEpisodes, function(n){ return (n.length !== 0); });
+
             //Sort the season and episodes.
             artistSeasons.sort(compare);
             artistEpisodes.sort(compareEpisodes);
@@ -335,6 +377,7 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                 var ep_i = ep_array.indexOf(season_episode);
                 //If we don't have the episode number, add to array
                 if(ep_i === -1){
+
                     ep_array.push(season_episode);
                     epno_count.push(1);
 
@@ -351,7 +394,6 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                         epno_count[ep_i]++;
                     }
                 }
-
 
                 //Process each row in the episode group
                 $(this).each(function(){
@@ -485,6 +527,9 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
             var tabheads = $("table[class^='torrent_table']");
             $(tabheads).each(function(){
                 if($(this).find("tr[class^=releases_]").children().length == 0){
+                    if(contains_extras && !extras_table){
+                        extras_table = $(this).clone(false);
+                    }
                     $(this).remove();
                 }
             });
@@ -496,7 +541,25 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                 $(remaining_tables[1]).attr('id', 'torrents_episodes');
                 $(remaining_tables[1]).insertBefore($(remaining_tables[0]));
             }
-            //$(second_colhead).insertAfter($(first_colhead));
+
+            //Create table for extras
+            if(contains_extras){
+                $(extras_table).attr('id', 'torrents_extras');
+                $(extras_table).find("[class^='colhead_dark'] strong").text("Extras");
+                $($(extras_table).find("[class^='colhead_dark'] td:nth-child(2) a")[1]).attr('onclick', '$(".releases_88").gtoggle(true); return false');
+
+                $("#discog_table").append(extras_table);
+
+                //Move extras under their own table
+                $(artistExtras).each(function(){
+                    //Rename class of rows for hide button
+                    $(this).attr('class', function(index, attr){
+                        return attr.replace(/releases_\d\d/i, 'releases_88');
+                    });
+
+                    $(this).insertAfter("#torrents_extras tr[class^='colhead_dark']");
+                });
+            }
         }
         else if (page_url == '/torrents.php'){
             var pad_rls;
@@ -615,7 +678,7 @@ function compareAltSeasons(a,b) {
 }
 
 function compareEpisodes(a,b) {
-    if(a.length == 0 || b.length == 0){ return 0; }
+    if(a.length == 0 || b.length == 0){ return 0;}
 
     a = ep_grp_regex.exec($($(a)[0]).find("[class^='group_info clear'] a.tooltip").text())[1];
     b = ep_grp_regex.exec($($(b)[0]).find("[class^='group_info clear'] a.tooltip").text())[1];
@@ -927,7 +990,7 @@ function initSeriesSearchBar(){
 
 function parseReleaseName(title, curr_id){
     //Origin regex
-    var scenearray = "LucidTV,EDHD,Scene,SH0W,0SEC,2HD,7SinS,aAF,ACED,AiRTV,ALTEREGO,AMBIT,AMBiTiOUS,ANGELiC,ANiVCD,ARCHiViST,ARiGOLD,ASAP,ASCENDANCE,AVCDVD,AVCHD,AVS,aWake,B4F,BAJSKORV,BALLS,BAMBOOZLE,BareHD,BARGE,BATV,BAWLS,BiA,BiGBruv,BiPOLAR,BiQ,BOV,BRAVERY,BRICKSQUaD,BRiGAND,BRISK,BRMP,BWB,C4TV,CABs,CAFFEiNE,CaRaT,Catchphraser,CBFD,CBFM,CCAT,CCCAM,CCCUNT,CHAMPiONS,CiA,CiNEFiLE,CLASSiC,CLUE,CNHD,COMPETiTiON,COMPULSiON,CONSCiENCE,CookieMonster,Counterfeit,CRAVERS,CREED,CREST,CRiMSON,CROOKS,CROSSFIT,CTU,CURIOSITY,D0NK,D2V,DAA,DAH,DEADPiXEL,DEADPOOL,DEAL,DeBTViD,DEFEATER,DEFiNiTE,DEFLATE,DEiMOS,DEMAND,DEMENTED,DEPTH,DERANGED,DETAiLS,DEUTERiUM,DHD,DiCH,DiFFERENT,DIMENSION,DiVERGE,DiVERSE,DiViSiON,DOCERE,DOMiNATE,DRAWER,DUKES,EDUCATiON,EiTheL,EPiC,ETACH,euHD,EVOLVE,EwDp,EXCELENTE,EXCELLENCE,EXECUTION,EXViD,FADE,FaiLED,FAIRPLAY,FARGIRENIS,FCC,FEET,FFNDVD,FiCO,FiHTV,FilmHD,FIRST,FKKHD,FKKTV,FLATLiNE,FLEET,FLHD,FoReVer,FoV,FQM,FRiSPARK,FTP,FULLSiZE,FUtV,GAMETiME,GAYTEAM,GECKOS,GERUDO,GHOULS,GORE,GOTEi,GOTHiC,GreenBlade,GRiP,GTVG,GUFFAW,GZCrew,HAGGiS,HALCYON,HD4U,HDMI,HDR,HILSWALTB,HOLiDAY,HUNTED,hV,HYBRiS,iFH,iFPD,iGNiTiON,iHD,iKUZE,iLM,iMCARE,IMMERSE,iMMORTALs,iNCiTE,iND,iNFiNiTE,iNGOT,INNOCENCE,INQUISITION,iNSPiRED,iNTENTiON,intothevoid,iOM,ITG,Japhson,JETSET,JHD,JMT,KFV,KILLERS,KLINGON,KmF,KNiFESHARP,KNOCKOUT,KOENiG,KYR,LCHD,LiBRARiANS,LiLDiCK,LiNKLE,LiViDiTY,LMAO,LOGiES,LOL,LPH,Ltu,LYCAN,m00tv,MACK4,MAJiKNiNJAZ,MaM,MARS,MATCH,MAYHEM,MEDiEVAL,MELON,MEMENTO,METCON,MiND,MiNDTHEGAP,MiNT,MiSFiTS,MOAB,MOBTV,MOMENTUM,MORiTZ,MOROSE,MoTv,MSE,MTB,MULTiPLY,NBCTV,NBS,NCAXA,NGCHD,NODLABS,NORDiCHD,NORiTE,NOSCREENS,NSN,OMER,OMiCRON,ORENJI,ORGANiC,OSiRiS,OSiTV,OUIJA,OVERTiME,P0W4,P0W4DVD,P2W,PANZeR,PCH,PFa,PHASE,PHOBOS,PiX,PLANET3,PLUTONiUM,PREMiER,PRiNCE,PSYCHD,PUCKS,PVR,QCF,QPEL,QRUS,RAPIDO,RCDiVX,RDVAS,RedBlade,REMARKABLE,REMAX,REWARD,RiTALiN,RiVER,ROVERS,RPTV,RRH,RTA,RTL,RUGGERZ,RUNNER,S0LD13R,SADPANDA,SAiNTS,SEMTEX,SERIOUSLY,SFM,SHOCKWAVE,SHORTBREHD,SiBV,SiNNERS,SiTiN,SKANK,SKGTV,SNOOZE,SNOW,SOAPBOX,SODAPOP,SomeTV,SONiDO,SORNY,SPAROOD,sPHD,SPLiTSViLLE,SPOCHT,SPRiNTER,SQUEAK,SRiZ,ss,STRiFE,SVA,SViNTO,sweHD,SweWR,SWOLLED,SYNS,SYS,TABULARiA,TARS,TASTETV,Taurine,TAXES,TBS,TCM,TCPA,TELEFUNKEN,TENEIGHTY,TERRA,TFiN,thebeeb,TINKERS,TLA,TNS,ToF,TOPAZ,TOPCAT,TRexHD,TRiPS,TRUEDEF,TURBO,TVA,TVBOX,TVBYEN,TViLLAGE,TVLoO,TvNORGE,TVP,TVSLiCES,TWG,uAuViD,UAV,uDF,UltraHD,UNTOUCHABLES,UNVEiL,URTV,UTOPiA,VALiOMEDiA,VeDeTT,VERUM,VH-PROD,ViD,VIDEOSLAVE,ViLD,VoMiT,W4F,W4Y,WaLMaRT,WALTERWHITE,WAT,WAVEY,WeFaiLED,WHEELS,WHiSKEY,WiDE,WiNNERS,WNN,WPi,xD2V,XOR,XORBiTANT,XPERT_HD,XTV,YELLOWBiRD,YesTV,ZZGtv,SPARKS,GECKOS,DRONES,BLOW,COCAIN,Replica,DiAMOND,Felony,SECTOR7,Larceny,Counterfeit,ROVERS,LPD,CiNEFiLE,LiBRARiANS,VoMiT,SADPANDA,VETO,AMIABLE,IAMABLE,SPOOKS,GHOULS,agw,CREEPSHOW,CREEPSHOWx,RedBlade,DoNE,BiPOLAR,FiCO,UNVEiL,WiDE,MULTiPLY,SiNNERS,PSYCHD,RUSTED,ARiES,NODLABS,HD4U,NOSCREENS,VALUE,GUACAMOLE,PHOBOS,USURY,TRiPS,RRH,MARS,TASTE,MOOVEE,7SiNS,DEPTH,PFa,KEBAP,AEROHOLiCS,GiMCHi,EiDER,SPRiNTER,FaiLED,MELiTE,CADAVER,WaLMaRT,JFKDVD,ENSOR,EwDp,HUMANiSM,TABULARiA,VH-PROD,iGNiTiON,iFAiL,OBiTS,ToF,ALLiANCE,ASSOCiATE,THUGLiNE,COW,Ltu,Counterfeit,Japhson,Felony,AN0NYM0US,BRMP,FRAGMENT,SiNCiTY,SAPHiRE,FUTURiSTiC,DEV0,GRiLL,Chakra,LoveGuru,REGARDS,LAP,MEGABOX,ONEY,iNTENSO,MANiC,aBD,JustWatch,FLABICIOUS,PussyFoot,SUMMERX,CHRONiCLER,EXCLUDED,SABENA,TERMiNAL,GETiT,HAiDEAF,WEST,NOMAAM,CURSE,HOTEL,LATENCY,GECiSFAGYi,UHDooDoo,SWAGGERUHD,LAZERS,CBGB,FilmHD,BAKED,NERV,FULLSiZE,TRUEDEF,PCH,CiNEMATiC,DiSRUPTiON,TAPAS,BRDC,BDA,watchHD,UltraHD,VEXHD,BLURRY,LCHD,MIDDLE,UNRELiABLE,WHiZZ,o0o,COASTER,SUPERSIZE,PTWINNER,OCULAR,ROUNDROBIN,KillerHD,KOREANSHIT,DUH,OMFUG,EMERALD,WhiteRhino,OLDHAM,iTWASNTME,SKG,CSOLHD,WESTCOAST".split(',');
+    var scenearray = "NOIVTC,LucidTV,EDHD,Scene,SH0W,0SEC,2HD,7SinS,aAF,ACED,AiRTV,ALTEREGO,AMBIT,AMBiTiOUS,ANGELiC,ANiVCD,ARCHiViST,ARiGOLD,ASAP,ASCENDANCE,AVCDVD,AVCHD,AVS,aWake,B4F,BAJSKORV,BALLS,BAMBOOZLE,BareHD,BARGE,BATV,BAWLS,BiA,BiGBruv,BiPOLAR,BiQ,BOV,BRAVERY,BRICKSQUaD,BRiGAND,BRISK,BRMP,BWB,C4TV,CABs,CAFFEiNE,CaRaT,Catchphraser,CBFD,CBFM,CCAT,CCCAM,CCCUNT,CHAMPiONS,CiA,CiNEFiLE,CLASSiC,CLUE,CNHD,COMPETiTiON,COMPULSiON,CONSCiENCE,CookieMonster,Counterfeit,CRAVERS,CREED,CREST,CRiMSON,CROOKS,CROSSFIT,CTU,CURIOSITY,D0NK,D2V,DAA,DAH,DEADPiXEL,DEADPOOL,DEAL,DeBTViD,DEFEATER,DEFiNiTE,DEFLATE,DEiMOS,DEMAND,DEMENTED,DEPTH,DERANGED,DETAiLS,DEUTERiUM,DHD,DiCH,DiFFERENT,DIMENSION,DiVERGE,DiVERSE,DiViSiON,DOCERE,DOMiNATE,DRAWER,DUKES,EDUCATiON,EiTheL,EPiC,ETACH,euHD,EVOLVE,EwDp,EXCELENTE,EXCELLENCE,EXECUTION,EXViD,FADE,FaiLED,FAIRPLAY,FARGIRENIS,FCC,FEET,FFNDVD,FiCO,FiHTV,FilmHD,FIRST,FKKHD,FKKTV,FLATLiNE,FLEET,FLHD,FoReVer,FoV,FQM,FRiSPARK,FTP,FULLSiZE,FUtV,GAMETiME,GAYTEAM,GECKOS,GERUDO,GHOULS,GORE,GOTEi,GOTHiC,GreenBlade,GRiP,GTVG,GUFFAW,GZCrew,HAGGiS,HALCYON,HD4U,HDMI,HDR,HILSWALTB,HOLiDAY,HUNTED,hV,HYBRiS,iFH,iFPD,iGNiTiON,iHD,iKUZE,iLM,iMCARE,IMMERSE,iMMORTALs,iNCiTE,iND,iNFiNiTE,iNGOT,INNOCENCE,INQUISITION,iNSPiRED,iNTENTiON,intothevoid,iOM,ITG,Japhson,JETSET,JHD,JMT,KFV,KILLERS,KLINGON,KmF,KNiFESHARP,KNOCKOUT,KOENiG,KYR,LCHD,LiBRARiANS,LiLDiCK,LiNKLE,LiViDiTY,LMAO,LOGiES,LOL,LPH,Ltu,LYCAN,m00tv,MACK4,MAJiKNiNJAZ,MaM,MARS,MATCH,MAYHEM,MEDiEVAL,MELON,MEMENTO,METCON,MiND,MiNDTHEGAP,MiNT,MiSFiTS,MOAB,MOBTV,MOMENTUM,MORiTZ,MOROSE,MoTv,MSE,MTB,MULTiPLY,NBCTV,NBS,NCAXA,NGCHD,NODLABS,NORDiCHD,NORiTE,NOSCREENS,NSN,OMER,OMiCRON,ORENJI,ORGANiC,OSiRiS,OSiTV,OUIJA,OVERTiME,P0W4,P0W4DVD,P2W,PANZeR,PCH,PFa,PHASE,PHOBOS,PiX,PLANET3,PLUTONiUM,PREMiER,PRiNCE,PSYCHD,PUCKS,PVR,QCF,QPEL,QRUS,RAPIDO,RCDiVX,RDVAS,RedBlade,REMARKABLE,REMAX,REWARD,RiTALiN,RiVER,ROVERS,RPTV,RRH,RTA,RTL,RUGGERZ,RUNNER,S0LD13R,SADPANDA,SAiNTS,SEMTEX,SERIOUSLY,SFM,SHOCKWAVE,SHORTBREHD,SiBV,SiNNERS,SiTiN,SKANK,SKGTV,SNOOZE,SNOW,SOAPBOX,SODAPOP,SomeTV,SONiDO,SORNY,SPAROOD,sPHD,SPLiTSViLLE,SPOCHT,SPRiNTER,SQUEAK,SRiZ,ss,STRiFE,SVA,SViNTO,sweHD,SweWR,SWOLLED,SYNS,SYS,TABULARiA,TARS,TASTETV,Taurine,TAXES,TBS,TCM,TCPA,TELEFUNKEN,TENEIGHTY,TERRA,TFiN,thebeeb,TINKERS,TLA,TNS,ToF,TOPAZ,TOPCAT,TRexHD,TRiPS,TRUEDEF,TURBO,TVA,TVBOX,TVBYEN,TViLLAGE,TVLoO,TvNORGE,TVP,TVSLiCES,TWG,uAuViD,UAV,uDF,UltraHD,UNTOUCHABLES,UNVEiL,URTV,UTOPiA,VALiOMEDiA,VeDeTT,VERUM,VH-PROD,ViD,VIDEOSLAVE,ViLD,VoMiT,W4F,W4Y,WaLMaRT,WALTERWHITE,WAT,WAVEY,WeFaiLED,WHEELS,WHiSKEY,WiDE,WiNNERS,WNN,WPi,xD2V,XOR,XORBiTANT,XPERT_HD,XTV,YELLOWBiRD,YesTV,ZZGtv,SPARKS,GECKOS,DRONES,BLOW,COCAIN,Replica,DiAMOND,Felony,SECTOR7,Larceny,Counterfeit,ROVERS,LPD,CiNEFiLE,LiBRARiANS,VoMiT,SADPANDA,VETO,AMIABLE,IAMABLE,SPOOKS,GHOULS,agw,CREEPSHOW,CREEPSHOWx,RedBlade,DoNE,BiPOLAR,FiCO,UNVEiL,WiDE,MULTiPLY,SiNNERS,PSYCHD,RUSTED,ARiES,NODLABS,HD4U,NOSCREENS,VALUE,GUACAMOLE,PHOBOS,USURY,TRiPS,RRH,MARS,TASTE,MOOVEE,7SiNS,DEPTH,PFa,KEBAP,AEROHOLiCS,GiMCHi,EiDER,SPRiNTER,FaiLED,MELiTE,CADAVER,WaLMaRT,JFKDVD,ENSOR,EwDp,HUMANiSM,TABULARiA,VH-PROD,iGNiTiON,iFAiL,OBiTS,ToF,ALLiANCE,ASSOCiATE,THUGLiNE,COW,Ltu,Counterfeit,Japhson,Felony,AN0NYM0US,BRMP,FRAGMENT,SiNCiTY,SAPHiRE,FUTURiSTiC,DEV0,GRiLL,Chakra,LoveGuru,REGARDS,LAP,MEGABOX,ONEY,iNTENSO,MANiC,aBD,JustWatch,FLABICIOUS,PussyFoot,SUMMERX,CHRONiCLER,EXCLUDED,SABENA,TERMiNAL,GETiT,HAiDEAF,WEST,NOMAAM,CURSE,HOTEL,LATENCY,GECiSFAGYi,UHDooDoo,SWAGGERUHD,LAZERS,CBGB,FilmHD,BAKED,NERV,FULLSiZE,TRUEDEF,PCH,CiNEMATiC,DiSRUPTiON,TAPAS,BRDC,BDA,watchHD,UltraHD,VEXHD,BLURRY,LCHD,MIDDLE,UNRELiABLE,WHiZZ,o0o,COASTER,SUPERSIZE,PTWINNER,OCULAR,ROUNDROBIN,KillerHD,KOREANSHIT,DUH,OMFUG,EMERALD,WhiteRhino,OLDHAM,iTWASNTME,SKG,CSOLHD,WESTCOAST".split(',');
     var p2parray = "KiTTeN,KORPOS,SiGMA,BTN,BTW,ESPNtb,HiSD,HRiP,iPRiP,iT00NZ,JJ,LoTV,NTb,PreBS,TTVa,TVSmash,2Maverick,2T,449,A4N,aB,ABH,Abjex,Absinth,AFFY,AG,AJP69,ALANiS,AltHD,Anime-Koi,AREA11,Asenshi,AURA,AUTHORiTY,BatchGuy,BB,BDCop,beAst,BF1,BgFr,BitHQ,bLinKkY,BluDragon,BluHD,BluntzRip,BlurayDesuYo,Bob,Bobash,BOOP,BS,BYTE,C-W,Cache,CasStudio,CBM,CH,ChaosBlades,CHD,Chihiro,CHiNJiTSU,Chotab,Chyuu,CLARiTY,CLDD,CMS,CMSSide,CNN,Coalgirls,Commie,Coo7,COR,CP,CREATiVE24,Cthuko,CTL,CtrlHD,CYRUS,D-Z0N3,DameDesuYo,DarkHollow,DaViEW,dbR,decibeL,denpa,DiFUN,DLBR,DmonHiro,DoA,Doki,DOLEMiTE,DON,doosh,Doremi,DRACULA,DWJ,DX-TV,Ebi,EbP,ECI,EDL,ELANOR,eMperor,EPSiLON,ESiR,Euc,EucHD,EV1LAS,EveTaku,Exiled-Destiny,FANT,FFF,Final8,FiNCH,FraMeSToR,FREAKS,gc04,gg,GJM,GoApe,Grassy,Green,GS,GTi,h264iRMU,HANDJOB,Handy,Hatsuyuki,HDAccess,HDB,HDCLUB,HDS,HDWinG,HDWTV,HDxT,HeBits,Hector,HERO,Hien,HiFi,Hiryuu,HoodBag,HOPELESS,HorribleSubs,HPotter,HQC,HRD,HT,HTTV,Hukumuzuku,HWD,HWE,Hype,iMPUDiCiTY,Introspective,iNVULTUATiON,iON,iPOP,Irishman,iTRY,IWStreams,jAh,JCH,jhonny2,JiZZA,JohnGalt,Juggalotus,JungleBoy,k3n,KAGA,Kaylith,KCRT,kingofosiris,KiNGS,KiSHD,KRaLiMaRKo,LEGiON,LiBERTY,LiGHTSPEED,LIMO,Link420,lulz,M0ar,matt42,MD,MEECH,Mezashite,MiCDROP,Migoto,MiMa,MissDream,MMI,monkee,MOS,MW,MYSELF,NEXT,NFHD,NORMIES,NorTV,NovaRip,NT,NTG,Nub,NuMbErTw0,NY2,NyanTaku,OOO,Oosh,OZC,panos,Pcar,pcsyndicate,Penumbra,Phr0stY,Piranha,PISTA,PLAYNOW,PLAYREADY,playTV,PLRVRTX,POD,Poke,PPKORE,ProdQc,PSiG,PublicHD,PWE,QOQ,QuebecRules,QUEENS,R2D2,Raizel,RARBG,RAS,RCG,RDF,Reborn4HD,RED,RedJohn,ReDone,Rizlim,RKSTR,RTFM,RTN,RUDOS,Ryu,RZF,SA89,SallySubs,saMMie,SbR,SDH,Secludedly,SFH,SHiELD,sHoTV,SiGMA,Silver007,Sir.Paul,SLiME,smcgill1969,SMODOMiTE,SOAP,SRS,StarryNights,Sticky83,SWC,Sweet-Star,SynHD,TAiLGATE,TAR,TayTO,TB,TeamCoCo,testttt,TheBox,THORA,THoRCuATo,TiGHTBH,tlacatlc6,tNe,tonic,TOPKEK,TRiAL,TrollHD,TrollUHD,TrueHD,TSTN,Tsundere,TT,TTL,TURTLE,TVCUK,TVV,TxN,TYT,Underwater,UNPOPULAR,UTW,Vawn,VietHD,ViLLAiNS,ViPER,ViSUM,Vivid,VLAD,wAm,WAREZNiK,WB,WBS,WDTeam,Weby,WHR,WhyNot,WiKi,WINNEBAGO,WITH,WLR,WRCR,WTB,WYW,XAA,XEON,XWT,yAzMMA,YFN,Yonidan,ZR1,Zurako".split(',');
     var regexscenegroups = new RegExp( '\^\('+scenearray.join( "|" )+'\)\$', "i");
     var regexp2pgroups = new RegExp( '\^\('+p2parray.join( "|" )+'\)\$', "i");
