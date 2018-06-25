@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV UI Improvements
 // @namespace    http://tampermonkey.net/
-// @version      0.45
+// @version      0.46
 // @description  Various UI modifications to improve organization.
 // @author       Narkyy
 // @match        https://www.morethan.tv/*
@@ -195,21 +195,22 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                     }
                     //Push the season rows to array
                     artistSeasons.push(final_season);
-                }
-                //Rename head to Showname - Season XX [Year]
-                if(page_url == '/torrents.php'){
-                    var seasonno = $(this).text();
-                    var showname = $(this).closest("td").prev().find("div[class^='tp-showname']").text();
-                    $(this).text(showname+" - "+seasonno);
 
-                    //Remove category, keep only year.
-                    var yeartext = $($(this).parent().contents()[2]).text();
-                    if(/(.*)(?=\[[a-zA-Z])/i.test(yeartext)){
-                        yeartext = /(.*)(?=\[[a-zA-Z])/i.exec(yeartext)[1];
+                    //Rename head to Showname - Season XX [Year]
+                    if(page_url == '/torrents.php'){
+                        var seasonno = $(this).text();
+                        var showname = $(this).closest("td").prev().find("div[class^='tp-showname']").text();
+                        $(this).text(showname+" - "+seasonno);
+
+                        //Remove category, keep only year.
+                        var yeartext = $($(this).parent().contents()[2]).text();
+                        if(/(.*)(?=\[[a-zA-Z])/i.test(yeartext)){
+                            yeartext = /(.*)(?=\[[a-zA-Z])/i.exec(yeartext)[1];
+                        }
+
+                        $(this).parent().contents()[2].remove();
+                        $(this).after("<span>"+yeartext+"</span>");
                     }
-
-                    $(this).parent().contents()[2].remove();
-                    $(this).after("<span>"+yeartext+"</span>");
                 }
             }
             //If there's EXX in the name, enter this
