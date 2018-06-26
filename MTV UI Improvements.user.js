@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV UI Improvements
 // @namespace    http://tampermonkey.net/
-// @version      0.47
+// @version      0.48
 // @description  Various UI modifications to improve organization.
 // @author       Narkyy
 // @match        https://www.morethan.tv/*
@@ -69,7 +69,8 @@ var epno_count = [];
 var seriesname = $("h2").text();
 var region;
 var seriesname_orig = seriesname;
-var seriesname_srch = seriesname.replace(/ /g,'+');;
+var seriesname_srch = seriesname.replace(/ /g,'+');
+var seriesname_andreplaced;
 var info_box;
 
 var tvdb_id, tvdb_url, tvmaze_id, tvmaze_url, tvmaze_info, banner, poster, poster_large;
@@ -121,12 +122,13 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                 //Get all rows under the torrent id
                 var alt_rows = $("tr[class^='releases_23 torrent_row groupid_"+ artist_groupid+"'] td[colspan=2] > a, tr[class^='releases_24 torrent_row groupid_"+ artist_groupid+"'] td[colspan=2] > a,"+
                                  "tr[class^='releases_25 torrent_row groupid_"+ artist_groupid+"'] td[colspan=2] > a, tr[class^='releases_99 torrent_row groupid_"+ artist_groupid+"'] td[colspan=2] > a,"+
-                                 "tr[class^='releases_21 torrent_row groupid_"+ artist_groupid+"'] td[colspan=2] > a, tr[class^='group_torrent groupid_"+artist_groupid+"'] td[colspan=3] > a");
+                                 "tr[class^='releases_21 torrent_row groupid_"+ artist_groupid+"'] td[colspan=2] > a, tr[class^='releases_22 torrent_row groupid_"+ artist_groupid+"'] td[colspan=2] > a,"+
+                                 "tr[class^='group_torrent groupid_"+artist_groupid+"'] td[colspan=3] > a");
 
                 //Get the season head from torrent id
                 var season_head = $($("tr[class^='releases_23 groupid_"+artist_groupid+" edition group_torrent discog'], tr[class^='releases_24 groupid_"+artist_groupid+" edition group_torrent discog'],"+
                                       "tr[class^='releases_25 groupid_"+artist_groupid+" edition group_torrent discog'], tr[class^='releases_99 groupid_"+artist_groupid+" edition group_torrent discog'],"+
-                                      "tr[class^='releases_21 groupid_"+artist_groupid+" edition group_torrent discog']")[0]).prev();
+                                      "tr[class^='releases_21 groupid_"+artist_groupid+" edition group_torrent discog'], tr[class^='releases_22 groupid_"+artist_groupid+" edition group_torrent discog']")[0]).prev();
 
                 //Realign the season label center
                 $(season_head).css('vertical-align', 'middle');
@@ -224,7 +226,7 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
 
                 var ep_head = $($("tr[class^='releases_23 groupid_"+artist_groupid_ep+" edition group_torrent discog'], tr[class^='releases_24 groupid_"+artist_groupid_ep+" edition group_torrent discog'],"+
                                   "tr[class^='releases_25 groupid_"+artist_groupid_ep+" edition group_torrent discog'], tr[class^='releases_99 groupid_"+artist_groupid_ep+" edition group_torrent discog'],"+
-                                  "tr[class^='releases_21 groupid_"+artist_groupid_ep+" edition group_torrent discog']")[0]).prev();
+                                  "tr[class^='releases_21 groupid_"+artist_groupid_ep+" edition group_torrent discog'], tr[class^='releases_22 groupid_"+artist_groupid_ep+" edition group_torrent discog']")[0]).prev();
 
                 var ep_group = $("tr[class*='groupid_"+artist_groupid_ep+"']");
 
@@ -313,6 +315,7 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                 region = region_regex.exec(seriesname)[2];
                 seriesname = region_regex.exec(seriesname)[1];
             }
+            seriesname_andreplaced = seriesname.replace(/\&/g,'and');
 
             //Get TVDB stuff quickly
             console.log("Getting Series Info");
@@ -744,7 +747,7 @@ function compareIndividualEpisodeGroups(a,b){
 function getTVDBID(){
     GM.xmlHttpRequest({
         method: "GET",
-        url: "https://api.tvmaze.com/search/shows?q="+seriesname,
+        url: "https://api.tvmaze.com/search/shows?q="+seriesname_andreplaced,
         headers: {
             "Content-Type": "application/json"
         },
@@ -753,6 +756,22 @@ function getTVDBID(){
 
             if(!parser.Error && parser.length != 0){
                 tvmaze_info = parser[0].show;
+
+                //Try to find the correct show
+                if(tvmaze_info.name.toLowerCase() != seriesname.toLowerCase() && parser.length > 1){
+                    tvmaze_info = parser[1].show;
+
+                    if(tvmaze_info.name.toLowerCase() != seriesname.toLowerCase()){
+                        for(var i = 2; i<parser.length; i++){
+                            var testname = parser[i].show.name;
+                            console.log(testname);
+                            if(testname.toLowerCase() == seriesname.toLowerCase()){
+                                tvmaze_info = parser[i].show;
+                            }
+                        }
+                    }
+                }
+
                 tvdb_id = tvmaze_info.externals.thetvdb;
                 tvmaze_id = tvmaze_info.id;
                 tvmaze_url = tvmaze_info.url.replace("http://", "https://");
@@ -1021,9 +1040,8 @@ function parseReleaseName(title, curr_id){
     }
     else origin = "No Group";
 
-    if(media_regex.test(title) && codec_regex.test(title)){
+    if(media_regex.test(title)){
         media = media_regex.exec(title.toLowerCase())[1];
-        codec = codec_regex.exec(title.toLowerCase())[1];
 
         switch(media){
             case "hdtv":
@@ -1047,6 +1065,12 @@ function parseReleaseName(title, curr_id){
             default:
                 media = "Unknown";
         }
+    }
+    else{
+        media = "Media";
+    }
+    if(codec_regex.test(title)){
+        codec = codec_regex.exec(title.toLowerCase())[1];
 
         switch(codec){
             case "x264":
@@ -1060,6 +1084,9 @@ function parseReleaseName(title, curr_id){
             default:
                 codec = "Unknown";
         }
+    }
+    else{
+        codec = "Codec";
     }
     if(res_regex.test(title)){
         resolution = res_regex.exec(title.toLowerCase())[1];
@@ -1099,7 +1126,6 @@ function parseReleaseName(title, curr_id){
     else if(title.toLowerCase().includes("proper")){
         web_source += "<span id='ep_repack'>Proper</span><span> / </span>";
     }
-
 
     return [codec, media, resolution, web_source, origin];
 }
