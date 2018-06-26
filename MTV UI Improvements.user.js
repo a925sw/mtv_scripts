@@ -242,7 +242,6 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                 }
                 else{  //There's extras on artist.php
                     contains_extras = true;
-                    console.log($(this).text());
 
                     //Get extras release name
                     groups.push($(this).attr('href'));
