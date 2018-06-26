@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV UI Improvements
 // @namespace    http://tampermonkey.net/
-// @version      0.46
+// @version      0.47
 // @description  Various UI modifications to improve organization.
 // @author       Narkyy
 // @match        https://www.morethan.tv/*
@@ -95,15 +95,16 @@ initSeriesSearchBar();
 //If page is /torrents.php
 if (page_url == '/torrents.php' || page_url == '/artist.php'){
 
+    //Clean up tables
+    $("#discog_table>div").remove();
+    //Remove voting links before getting elements.. breaks without "Disable voting links" setting enabled
+    $("[class^='votespan brackets'], [class^='brackets tooltip']").remove();
+    $("#similar_artist_map").remove();
+
     //Get objects needed
     dirname = $("[id^=files_]").find('.filelist_path');
     alt_filename = $("[id^=files_]").find('.filelist_table tbody tr:nth-child(2) td:first-child');
     group_id = $("[class^='group_info'] a.tooltip");
-
-    //Clean up tables
-    $("#discog_table>div").remove();
-    $("[class^='votespan brackets'], [class^='brackets tooltip']").remove();
-    $("#similar_artist_map").remove();
 
     var group_count = 0;
     if(group_id.length){
@@ -241,6 +242,7 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                 }
                 else{  //There's extras on artist.php
                     contains_extras = true;
+                    console.log($(this).text());
 
                     //Get extras release name
                     groups.push($(this).attr('href'));
@@ -407,7 +409,7 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
 
                     //Remove hidden tag set by site
                     $(this).attr('class', function(index, attr){
-                        return attr.replace(/ hidden/i, '');
+                        return attr.replace(/ hidden/gi, '');
                     });
 
                     var small_ep = $(this).find("td[colspan=2] > a").text();
