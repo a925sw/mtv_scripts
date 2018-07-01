@@ -1,8 +1,9 @@
 // ==UserScript==
 // @name         MTV UI Improvements
 // @namespace    http://tampermonkey.net/
-// @version      0.48
+// @version      0.49
 // @description  Various UI modifications to improve organization.
+// @license      MIT
 // @author       Narkyy
 // @match        https://www.morethan.tv/*
 // @match        https://morethan.tv/*
@@ -11,7 +12,8 @@
 // @grant        GM_listValues
 // @grant        GM_deleteValue
 // @grant        GM_getValue
-// @grant        GM.xmlHttpRequest
+// @grant        GM_xmlhttpRequest
+// @updateURL    https://rawgit.com/quietvoid/mtv_scripts/master/MTV%20UI%20Improvements.user.js
 // @downloadURL  https://rawgit.com/quietvoid/mtv_scripts/master/MTV%20UI%20Improvements.user.js
 // ==/UserScript==
 
@@ -23,7 +25,7 @@ var type_regex = /\.releases_(.+)\'/;
 var year_regex = /(.+)\s(\(\d\d\d\d\))/;
 var region_regex = /(.+)\s\((US|UK|CA)\)/i;
 var art_id_regex = /id=(.+)/;
-var ep_grp_regex = /(S[0-9].+?E[0-9].+?|20\d\d.\d\d.\d\d)/i;
+var ep_grp_regex = /(S[0-9]+E[0-9]+|20\d\d.\d\d.\d\d)/i;
 var season_grp_regex = /(S[0-9]+|Season.[0-9]+)/i;
 var season_full_regex = /Season.([0-9]+)/i;
 var ep_groupid_regex = /groupid_([0-9]+)/i;
@@ -515,7 +517,7 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                     }
                     else{
                         epno_count[index] = count_i - 1;
-                        $(this).insertAfter("[id^='cat_episode_"+season_episode+"']");
+                        $(this).insertAfter("[id='cat_episode_"+season_episode+"']");
                     }
                 }
                 //If last episode, add as td
@@ -525,7 +527,7 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                 }
                 else{
                     epno_count[index] = count_i - 1;
-                    $(this).insertAfter("[id^='cat_episode_"+season_episode+"']");
+                    $(this).insertAfter("[id='cat_episode_"+season_episode+"']");
                 }
             });
 
@@ -745,7 +747,7 @@ function compareIndividualEpisodeGroups(a,b){
 }
 
 function getTVDBID(){
-    GM.xmlHttpRequest({
+    GM_xmlhttpRequest({
         method: "GET",
         url: "https://api.tvmaze.com/search/shows?q="+seriesname_andreplaced,
         headers: {
@@ -794,7 +796,7 @@ function getTVDBID(){
 
 function getTVDBInfo(){
     if(tvdb_id){
-        GM.xmlHttpRequest({
+        GM_xmlhttpRequest({
             method: "GET",
             url: tvdb_url,
             onload: function(response) {
@@ -865,7 +867,7 @@ function fillInfo(){
 }
 
 function altBanner(url){
-GM.xmlHttpRequest({
+GM_xmlhttpRequest({
         method: "GET",
         url: "https://www.thetvdb.com"+url,
         onload: function(response) {
