@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV Autofetch for upload.php
 // @namespace    http://tampermonkey.net/
-// @version      0.63
+// @version      0.64
 // @description  Autofill the upload form using TVDB/TVmaze API
 // @author       Narkyy
 // @match        https://www.morethan.tv/upload.php
@@ -13,6 +13,7 @@
 // @grant        GM_deleteValue
 // @grant        GM_getValue
 // @grant        GM_xmlhttpRequest
+// @updateURL  https://rawgit.com/quietvoid/mtv_scripts/master/MTV%20Autofetch%20for%20upload.php.user.js
 // @downloadURL  https://rawgit.com/quietvoid/mtv_scripts/master/MTV%20Autofetch%20for%20upload.php.user.js
 // ==/UserScript==
 
