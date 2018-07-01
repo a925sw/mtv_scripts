@@ -816,25 +816,25 @@ function populateFields(){
     //Genres
     $("#tags").val (genres);
 
-    if(pack){
-        desc_top = "[b][align=center]"+seriesname+": Season "+season+"[/align][/b]";
-    }
-    else{
+    if(!pack){
         if(!ep_overview){
-            desc_top = "[b][align=center]"+seriesname+" S"+padded_season+"E"+padded_episode+" - "+ep_name+"[/align][/b]";
+            desc_top = "[b][align=center]"+seriesname+" S"+padded_season+"E"+padded_episode+" - "+ep_name+"[/align][/b]\n\n";
         }
         else{
-            desc_top = "[b][align=center]"+seriesname+" S"+padded_season+"E"+padded_episode+" - "+ep_name+"[/align]\nEpisode Overview:[/b]\n[hide]"+ep_overview+"[/hide]";
+            desc_top = "[b][align=center]"+seriesname+" S"+padded_season+"E"+padded_episode+" - "+ep_name+"[/align]\nEpisode Overview:[/b]\n[hide]"+ep_overview+"[/hide]\n\n";
         }
+    }
+    else{
+        desc_top = "";
     }
 
     //Description
     if(moviebool){
         desc_top = "";
-        $("#release_desc").val ("[spoiler=MediaInfo][/spoiler]\n[spoiler=Screenshots][/spoiler]");
+        $("#release_desc").val ("[hide=MediaInfo][/hide]\n[hide=Screenshots][/hide]");
     }
     else{
-        $("#release_desc").val (desc_top+"\n\n[spoiler=MediaInfo][/spoiler]\n[spoiler=Screenshots][/spoiler]");
+        $("#release_desc").val (desc_top+"[hide=MediaInfo][/hide]\n[hide=Screenshots][/hide]");
     }
 
     //If not a pack, add episode number
