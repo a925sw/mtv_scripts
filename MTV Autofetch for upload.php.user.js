@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV Autofetch for upload.php
 // @namespace    http://tampermonkey.net/
-// @version      0.62
+// @version      0.63
 // @description  Autofill the upload form using TVDB/TVmaze API
 // @author       Narkyy
 // @match        https://www.morethan.tv/upload.php
@@ -12,7 +12,7 @@
 // @grant        GM_listValues
 // @grant        GM_deleteValue
 // @grant        GM_getValue
-// @grant        GM.xmlHttpRequest
+// @grant        GM_xmlhttpRequest
 // @downloadURL  https://rawgit.com/quietvoid/mtv_scripts/master/MTV%20Autofetch%20for%20upload.php.user.js
 // ==/UserScript==
 
@@ -284,7 +284,7 @@ function refreshInfo() {
         if(selectedAPI == "tvdb"){
             console.log("Getting main info from TVDB");
             //Get TVDB ID
-            GM.xmlHttpRequest({
+            GM_xmlhttpRequest({
                 method: "GET",
                 url: url_final,
                 headers: {
@@ -313,7 +313,7 @@ function refreshInfo() {
 
             console.log("Getting main info from TVmaze");
             //Get show from release name
-            GM.xmlHttpRequest({
+            GM_xmlhttpRequest({
                 method: "GET",
                 url: url_final,
                 headers: {
@@ -363,7 +363,7 @@ function refreshInfo() {
 function getSeriesInfo(){
 
     //Get series info
-    GM.xmlHttpRequest({
+    GM_xmlhttpRequest({
         method: "GET",
         url: "https://api.thetvdb.com/series/" + tvdbid,
         headers: {
@@ -393,7 +393,7 @@ function getSeriesInfo(){
     });
 
     //Get year and episode info
-    GM.xmlHttpRequest({
+    GM_xmlhttpRequest({
         method: "GET",
         url: "https://api.thetvdb.com/series/"+tvdbid+"/episodes/query?airedSeason="+season+"&airedEpisode="+episode,
         headers: {
@@ -418,7 +418,7 @@ function getSeriesInfo(){
     });
 
     //Get poster URL
-    GM.xmlHttpRequest({
+    GM_xmlhttpRequest({
         method: "GET",
         url: "https://api.thetvdb.com/series/"+tvdbid+"/images/query?keyType=season&subKey="+season,
         headers: {
@@ -452,7 +452,7 @@ function getSeriesInfo(){
     });
 
     //Get actor list
-    GM.xmlHttpRequest({
+    GM_xmlhttpRequest({
         method: "GET",
         url: "https://api.thetvdb.com/series/"+tvdbid+"/actors",
         headers: {
@@ -492,7 +492,7 @@ function getSeriesInfo(){
 }
 
 function getAlternativePoster(){
-    GM.xmlHttpRequest({
+    GM_xmlhttpRequest({
         method: "GET",
         url: "https://api.thetvdb.com/series/"+tvdbid+"/images/query?keyType=poster",
         headers: {
@@ -527,7 +527,7 @@ function getAlternativePoster(){
 function getSeriesInfoMaze(){
 
     //Get series info
-    GM.xmlHttpRequest({
+    GM_xmlhttpRequest({
         method: "GET",
         url: "https://api.tvmaze.com/shows/" + tvdbid,
         headers: {
@@ -571,7 +571,7 @@ function getSeriesInfoMaze(){
         }
     });
     //Get year and episode info
-    GM.xmlHttpRequest({
+    GM_xmlhttpRequest({
         method: "GET",
         url: "https://api.tvmaze.com/shows/"+tvdbid+"/episodebynumber?season="+season+"&number="+episode,
         headers: {
@@ -599,7 +599,7 @@ function getSeriesInfoMaze(){
     });
 
     //Get actor list
-    GM.xmlHttpRequest({
+    GM_xmlhttpRequest({
         method: "GET",
         url: "https://api.tvmaze.com/shows/"+tvdbid+"/cast",
         headers: {
@@ -889,7 +889,7 @@ function populateFields(){
 //Series name, genres, IMDB ID
 function getTVDBTitle(){
     if(alt_tvdbname || ext_tvdb){
-        GM.xmlHttpRequest({
+        GM_xmlhttpRequest({
             method: "GET",
             url: tvdb_url,
             onload: function(response) {
@@ -954,7 +954,7 @@ function renewTVDBToken(){
         var initpost = JSON.stringify({"apikey":GM_getValue("apikey"), "userkey":GM_getValue("userkey"), "username":GM_getValue("username")});
         var apitoken;
 
-        GM.xmlHttpRequest({
+        GM_xmlhttpRequest({
             method: "POST",
             url: "https://api.thetvdb.com/login",
             data: initpost,
