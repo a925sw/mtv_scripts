@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV UI Improvements
 // @namespace    http://tampermonkey.net/
-// @version      0.49
+// @version      0.50
 // @description  Various UI modifications to improve organization.
 // @license      MIT
 // @author       Narkyy
@@ -759,6 +759,7 @@ function getTVDBID(){
             if(!parser.Error && parser.length != 0){
                 tvmaze_info = parser[0].show;
 
+                console.log(parser)
                 //Try to find the correct show
                 if(tvmaze_info.name.toLowerCase() != seriesname.toLowerCase() && parser.length > 1){
                     tvmaze_info = parser[1].show;
@@ -769,6 +770,9 @@ function getTVDBID(){
                             console.log(testname);
                             if(testname.toLowerCase() == seriesname.toLowerCase()){
                                 tvmaze_info = parser[i].show;
+                            }
+                            else{
+                                tvmaze_info = parser[0].show;
                             }
                         }
                     }
