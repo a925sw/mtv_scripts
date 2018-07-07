@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV UI Improvements
 // @namespace    http://tampermonkey.net/
-// @version      0.50
+// @version      0.51
 // @description  Various UI modifications to improve organization.
 // @license      MIT
 // @author       Narkyy
@@ -141,7 +141,7 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                 var final_season;
 
                 //If the group name isn't Season XX, we rename to what it is.
-                if(/S[0-9]+(\.|\s)/.test($(this).text()) || !/^Season.[0-9]+($|\sPart|\.\d)/i.test($(this).text())){
+                if(/S[0-9]+(\.|\s)/.test($(this).text()) || !/^Season.[0-9]+(\s$|$|\sPart|\.\d)/i.test($(this).text())){
 
                     season_group = $("tr[class*='groupid_"+artist_groupid+"']");
 
@@ -759,7 +759,6 @@ function getTVDBID(){
             if(!parser.Error && parser.length != 0){
                 tvmaze_info = parser[0].show;
 
-                console.log(parser)
                 //Try to find the correct show
                 if(tvmaze_info.name.toLowerCase() != seriesname.toLowerCase() && parser.length > 1){
                     tvmaze_info = parser[1].show;
