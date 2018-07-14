@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV UI Improvements
 // @namespace    http://tampermonkey.net/
-// @version      0.51
+// @version      0.52
 // @description  Various UI modifications to improve organization.
 // @license      MIT
 // @author       Narkyy
@@ -622,7 +622,7 @@ function getGroup(url){
     count++;
 
     $.get("/"+url, function(data){
-        data = $($(data)[79]).find("#content");
+        data = $(data).filter("#wrapper");
         var rls_names = $(data).find("[id^=files_]").find('.filelist_path');
         var alt_rls_names = $(data).find("[id^=files_]").find('.filelist_table tbody tr:nth-child(2) td:first-child');
 
@@ -782,8 +782,10 @@ function getTVDBID(){
                 tvmaze_url = tvmaze_info.url.replace("http://", "https://");
                 tvdb_url = "https://www.thetvdb.com?id="+tvdb_id+"&tab=series";
 
-                poster = tvmaze_info.image.medium.replace("http://", "https://");
-                poster_large = tvmaze_info.image.original.replace("http://", "https://");
+                if(tvmaze_info.image){
+                    poster = tvmaze_info.image.medium.replace("http://", "https://");
+                    poster_large = tvmaze_info.image.original.replace("http://", "https://");
+                }
 
                 //Fill now because it looks nicer
                 fillInfo();
@@ -840,14 +842,16 @@ function getTVDBInfo(){
 }
 
 function fillInfo(){
-    if(tvmaze_info.image.medium){
-        $("[class='box box_image']").remove();
+    if(tvmaze_info.image){
+        if(tvmaze_info.image.medium){
+            $("[class='box box_image']").remove();
 
-        $(info_box).before("<div class='box box_image'><div class='head'><strong>"+seriesname_orig+"</strong></div><div style='text-align: center; padding: 10px 0px;'>"
-                           +"<img style='max-width: 220px;' src='"+poster+"'"
-                           +"alt='"+seriesname_orig+"' onclick=\"lightbox.init('"+poster_large+"', 220);\">"
-                           +"</div>"
-                           +"</div>");
+            $(info_box).before("<div class='box box_image'><div class='head'><strong>"+seriesname_orig+"</strong></div><div style='text-align: center; padding: 10px 0px;'>"
+                               +"<img style='max-width: 220px;' src='"+poster+"'"
+                               +"alt='"+seriesname_orig+"' onclick=\"lightbox.init('"+poster_large+"', 220);\">"
+                               +"</div>"
+                               +"</div>");
+        }
     }
 
     if(series_info){
@@ -909,7 +913,7 @@ function getCachedLists(){
         GM_setValue("last_id", init_count);
     }
     //Set current to last ID
-    current_count = init_count;
+    current_count = init_count, count = init_count;
 
     //Check for cached series array or add it to storage.
     if(GM_listValues().includes("cached_series")){
@@ -952,12 +956,13 @@ function getCachedLists(){
 
 function getSeries(i){
     $.get('/artist.php?id='+i, function(data){
-        data = $($(data)[79]).find("#content");
+        data = $(data).filter("#wrapper");
+        data = $(data).find("#content");
 
         var id;
 
         //If the series page isn't empty, so valid
-        if(data.length != 0){
+        if(data.length != 0 && !data.text().includes("Error 404")){
             var name = $(data).find("h2").text();
 
             id = series_id_regex.exec($(data).find("div[class^='linkbox'] a.brackets:last").attr('href'))[1];
