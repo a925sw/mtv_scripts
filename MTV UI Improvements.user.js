@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV UI Improvements
 // @namespace    http://tampermonkey.net/
-// @version      0.52
+// @version      0.53
 // @description  Various UI modifications to improve organization.
 // @license      MIT
 // @author       Narkyy
@@ -54,6 +54,7 @@ var group_id;
 var groups = [];
 var final_rows = $();
 var count = 0;
+var grprls_count = 0;
 var changed_i = 0;
 
 var new_season_group = [];
@@ -619,7 +620,7 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
 }
 
 function getGroup(url){
-    count++;
+    grprls_count++;
 
     $.get("/"+url, function(data){
         data = $(data).filter("#wrapper");
@@ -642,10 +643,10 @@ function getGroup(url){
             path_count++;
         });
 
-        if(count < groups.length){
-            if(groups[count].includes("torrents.php")){
+        if(grprls_count < groups.length){
+            if(groups[grprls_count].includes("torrents.php")){
                path_count = 0;
-               getGroup(groups[count]);
+               getGroup(groups[grprls_count]);
             }
         }
         else{
