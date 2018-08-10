@@ -777,7 +777,6 @@ function getTVDBID(){
                     }
                 }
                 else if(premiereyear){
-                    console.log(premiereyear);
                     var altyear_index = parser.findIndex(obj => obj.show.premiered.includes(premiereyear));
 
                     if(altyear_index){
