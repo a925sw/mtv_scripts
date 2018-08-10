@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV UI Improvements
 // @namespace    http://tampermonkey.net/
-// @version      0.54
+// @version      0.55
 // @description  Various UI modifications to improve organization.
 // @license      MIT
 // @author       Narkyy
@@ -22,7 +22,7 @@ var list_parse_regex = /\":.+?,\"/gmi;
 var list_parse_regex_end = /\{.|\":.+?.}/gmi;
 var series_id_regex = /id=(.+)\#/;
 var type_regex = /\.releases_(.+)\'/;
-var year_regex = /(.+)\s(\(\d\d\d\d\))/;
+var year_regex = /(.+)\s(\((\d\d\d\d)\))/;
 var region_regex = /(.+)\s\((US|UK|CA)\)/i;
 var art_id_regex = /id=(.+)/;
 var ep_grp_regex = /(S[0-9]+E[0-9]+|20\d\d.\d\d.\d\d)/i;
@@ -74,6 +74,7 @@ var region;
 var seriesname_orig = seriesname;
 var seriesname_srch = seriesname.replace(/ /g,'+');
 var seriesname_andreplaced;
+var premiereyear;
 var info_box;
 
 var tvdb_id, tvdb_url, tvmaze_id, tvmaze_url, tvmaze_info, banner, poster, poster_large;
@@ -312,6 +313,7 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
 
             //If name contains year, strip it for info search
             if(year_regex.test(seriesname)){
+                premiereyear = year_regex.exec(seriesname)[3];
                 seriesname = year_regex.exec(seriesname)[1];
             }
             else if(region_regex.test(seriesname)){
@@ -774,6 +776,14 @@ function getTVDBID(){
                         }
                     }
                 }
+                else if(premiereyear){
+                    console.log(premiereyear);
+                    var altyear_index = parser.findIndex(obj => obj.show.premiered.includes(premiereyear));
+
+                    if(altyear_index){
+                        tvmaze_info = parser[altyear_index].show;
+                    }
+                }
 
                 tvdb_id = tvmaze_info.externals.thetvdb;
                 tvmaze_id = tvmaze_info.id;
@@ -1001,6 +1011,7 @@ function initSeriesSearchBar(){
         e.preventDefault();
         var input_str = $(this).find('input').val().toLowerCase();
         var id_match = series_search_list[input_str];
+
         location.href = '/artist.php?id='+id_match;
     });
 
