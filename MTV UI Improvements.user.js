@@ -1030,9 +1030,6 @@ function initSeriesSearchBar(){
     $(searchbar_series).submit(function(e){
         e.preventDefault();
 
-        console.log("Input: "+ $("#series_search").val());
-        console.log("Input 2: "+ document.getElementById("series_search").value);
-
         var input_str = $("#series_search").val().toLowerCase();
         var id_match = series_search_list[input_str];
 
