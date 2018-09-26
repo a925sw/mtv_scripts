@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV UI Improvements
 // @namespace    http://tampermonkey.net/
-// @version      0.57
+// @version      0.58
 // @description  Various UI modifications to improve organization.
 // @license      MIT
 // @author       Narkyy
@@ -115,6 +115,7 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
     if(group_id.length){
         //For every matched group,
         $(group_id).each(function(){
+            var showname = $(this).closest("td").prev().find("div[class^='tp-showname']").text();
             //If there's Season or SXX in the name, enter this
             if($(this).text().includes("Season") || /S[0-9]+(\.|\s)/.test($(this).text())){
 
@@ -143,7 +144,7 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                 var final_season;
 
                 //If the group name isn't Season XX, we rename to what it is.
-                if(/S[0-9]+(\.|\s)/.test($(this).text()) || !/^Season.[0-9]+(\s$|$|\sPart|\.\d)/i.test($(this).text())){
+                if(/S[0-9]+(\.|\s)/.test($(this).text()) || !/Season.[0-9]+(\s$|$|\sPart|\.\d)/i.test($(this).text())){
 
                     season_group = $("tr[class*='groupid_"+artist_groupid+"']");
 
@@ -180,7 +181,7 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                     new_season_childs.push(season_group);
                 }
                 //If the group is named Season XX only
-                else{
+                else {
 
                     season_group = $("tr[class*='groupid_"+artist_groupid+"']");
 
@@ -204,9 +205,8 @@ if (page_url == '/torrents.php' || page_url == '/artist.php'){
                     artistSeasons.push(final_season);
 
                     //Rename head to Showname - Season XX [Year]
-                    if(page_url == '/torrents.php'){
+                    if(page_url == '/torrents.php' && /^Season./.test($(this).text())){
                         var seasonno = $(this).text();
-                        var showname = $(this).closest("td").prev().find("div[class^='tp-showname']").text();
                         $(this).text(showname+" - "+seasonno);
 
                         //Remove category, keep only year.
