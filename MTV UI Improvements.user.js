@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV UI Improvements
 // @namespace    http://tampermonkey.net/
-// @version      0.58
+// @version      0.59
 // @description  Various UI modifications to improve organization.
 // @license      MIT
 // @author       Narkyy
@@ -837,6 +837,18 @@ function getTVDBInfo(){
 
                     fillInfo();
                 }
+                else{
+                    series_info = undefined;
+
+                    $.merge(tvmaze_box, $("<li class='list-group-item clearfix'><strong>Status: </strong><span>"+tvmaze_info.status+"</span></li>"+
+                                          "<li class='list-group-item clearfix'><strong>First Aired: </strong><span>"+tvmaze_info.premiered+"</span></li>"+
+                                          "<li class='list-group-item clearfix'><strong>Network: </strong><span>"+(tvmaze_info.network ? tvmaze_info.network.name : tvmaze_info.webChannel.name)+"</span></li>"+
+                                          "<li class='list-group-item clearfix'><strong>Runtime: </strong><span>"+tvmaze_info.runtime+"</span></li>"+
+                                          "<li class='list-group-item clearfix'><strong>Genres: </strong><span>"+tvmaze_info.genres.toString().replace(/,/g, ', ')+"</span></li>"+
+                                          "<li class='list-group-item clearfix'><strong style='color:#31e08b'>TVmaze: </strong><span><a href="+tvmaze_url+" target='_blank'>"+tvmaze_id+"</a></span></li>"));
+
+                    fillInfo();
+                }
             }
         });
     }
@@ -876,7 +888,6 @@ function fillInfo(){
 
         $(info_box).find("ul").append(tvdb_li, tvmaze_li);
         console.log("Added TVDB Info");
-
     }
     else{
         if(tvmaze_box.length != 0){
