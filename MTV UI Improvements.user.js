@@ -933,7 +933,7 @@ function getCachedLists(){
         init_count = parseInt(GM_getValue("last_id"));
     }
     else{
-        init_count = 11689;
+        init_count = 14087;
         GM_setValue("last_id", init_count);
     }
     //Set current to last ID
