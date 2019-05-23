@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV UI Improvements
 // @namespace    http://tampermonkey.net/
-// @version      0.60
+// @version      0.7
 // @description  Various UI modifications to improve organization.
 // @license      MIT
 // @author       Narkyy
