@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MTV UI Improvements
 // @namespace    Violentmonkey Scripts
-// @version      0.7
+// @version      0.75
 // @description  Various UI modifications to improve organization.
 // @license      MIT
 // @author       Narkyy
